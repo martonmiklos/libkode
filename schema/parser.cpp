@@ -1117,14 +1117,10 @@ void Parser::importSchema(ParserContext *context, const QString &location)
             return;
         }
 
-        QXmlInputSource source(&file);
-        QXmlSimpleReader reader;
-        reader.setFeature(QLatin1String("http://xml.org/sax/features/namespace-prefixes"), true);
-
         QDomDocument doc(QLatin1String("kwsdl"));
         QString errorMsg;
         int errorLine, errorColumn;
-        bool ok = doc.setContent(&source, &reader, &errorMsg, &errorLine, &errorColumn);
+        bool ok = doc.setContent(&file, &errorMsg, &errorLine, &errorColumn);
         if (!ok) {
             qDebug("Error[%d:%d] %s", errorLine, errorColumn, qPrintable(errorMsg));
             return;
@@ -1162,14 +1158,10 @@ void Parser::includeSchema(ParserContext *context, const QString &location)
             return;
         }
 
-        QXmlInputSource source(&file);
-        QXmlSimpleReader reader;
-        reader.setFeature(QLatin1String("http://xml.org/sax/features/namespace-prefixes"), true);
-
         QDomDocument doc(QLatin1String("kwsdl"));
         QString errorMsg;
         int errorLine, errorColumn;
-        bool ok = doc.setContent(&source, &reader, &errorMsg, &errorLine, &errorColumn);
+        bool ok = doc.setContent(&file, &errorMsg, &errorLine, &errorColumn);
         if (!ok) {
             qDebug("Error[%d:%d] %s", errorLine, errorColumn, qPrintable(errorMsg));
             return;
@@ -1383,17 +1375,36 @@ bool Parser::debugParsing()
     return s_debug;
 }
 
-bool Parser::parse(ParserContext *context, QXmlInputSource *source)
+bool Parser::parse(ParserContext *context, QFile *source)
 {
-    QXmlSimpleReader reader;
-    reader.setFeature(QLatin1String("http://xml.org/sax/features/namespace-prefixes"), true);
-
     QDomDocument document(QLatin1String("KWSDL"));
 
     QString errorMsg;
     int errorLine, errorCol;
     QDomDocument doc;
-    if (!doc.setContent(source, &reader, &errorMsg, &errorLine, &errorCol)) {
+    if (!doc.setContent(source, &errorMsg, &errorLine, &errorCol)) {
+        qDebug("%s at (%d,%d)", qPrintable(errorMsg), errorLine, errorCol);
+        return false;
+    }
+
+    QDomElement element = doc.documentElement();
+    const QName name = element.tagName();
+    if (name.localName() != QLatin1String("schema")) {
+        qDebug("document element is '%s'", qPrintable(element.tagName()));
+        return false;
+    }
+
+    return parseSchemaTag(context, element);
+}
+
+bool Parser::parse(ParserContext *context, const QString &source)
+{
+    QDomDocument document(QLatin1String("KWSDL"));
+
+    QString errorMsg;
+    int errorLine, errorCol;
+    QDomDocument doc;
+    if (!doc.setContent(source, &errorMsg, &errorLine, &errorCol)) {
         qDebug("%s at (%d,%d)", qPrintable(errorMsg), errorLine, errorCol);
         return false;
     }
@@ -1410,15 +1421,12 @@ bool Parser::parse(ParserContext *context, QXmlInputSource *source)
 
 bool Parser::parseFile(ParserContext *context, QFile &file)
 {
-    QXmlInputSource source(&file);
-    return parse(context, &source);
+    return parse(context, &file);
 }
 
 bool Parser::parseString(ParserContext *context, const QString &data)
 {
-    QXmlInputSource source;
-    source.setData(data);
-    return parse(context, &source);
+    return parse(context, data);
 }
 
 } // end namespace XSD

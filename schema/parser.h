@@ -84,7 +84,8 @@ public:
     static bool debugParsing();
 
 private:
-    bool parse(ParserContext *context, QXmlInputSource *source);
+    bool parse(ParserContext *context, QFile *source);
+    bool parse(ParserContext *context, const QString &source);
 
     void parseImport(ParserContext *context, const QDomElement &);
     /**
