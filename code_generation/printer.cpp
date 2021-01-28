@@ -37,7 +37,7 @@ public:
     Private(Printer *parent) : mParent(parent) {}
 
     void addLabel(Code &code, const QString &label);
-    QString classHeader(const Class &classObject, bool publicMembers, bool nestedClass = false);
+    QString classHeader(const Class &classObject, bool nestedClass = false);
     QString classImplementation(const Class &classObject, bool nestedClass = false);
     void addFunctionHeaders(Code &code, const Function::List &functions, const QString &className,
                             int access);
@@ -87,8 +87,7 @@ QString Printer::Private::formatType(const QString &type) const
     return s;
 }
 
-QString Printer::Private::classHeader(const Class &classObject, bool publicMembers,
-                                      bool nestedClass)
+QString Printer::Private::classHeader(const Class &classObject, bool nestedClass)
 {
     Code code;
 
@@ -170,7 +169,7 @@ QString Printer::Private::classHeader(const Class &classObject, bool publicMembe
 
         Class::List::ConstIterator it, itEnd = nestedClasses.constEnd();
         for (it = nestedClasses.constBegin(); it != itEnd; ++it) {
-            code += classHeader((*it), false, true);
+            code += classHeader((*it), true);
         }
 
         code.newLine();
@@ -228,52 +227,57 @@ QString Printer::Private::classHeader(const Class &classObject, bool publicMembe
     addFunctionHeaders(code, functions, classObject.name(), Function::Private);
     addFunctionHeaders(code, functions, classObject.name(), Function::Private | Function::Slot);
 
+    QList<Function::AccessSpecifier> accesModes(
+            { Function::Public, Function::Private, Function::Protected });
     if (!classObject.memberVariables().isEmpty()) {
-        Function::List::ConstIterator it;
-        // Do we have any private function?
-        bool hasPrivateFunc = false;
-        bool hasPrivateSlot = false;
-        for (it = functions.constBegin(); it != functions.constEnd(); ++it) {
-            if ((*it).access() == Function::Private) {
-                hasPrivateFunc = true;
-            } else if ((*it).access() == (Function::Private | Function::Slot)) {
-                hasPrivateSlot = true;
+        for (auto accessMode : accesModes) {
+            if (!classObject.hasMemberVariableWithAccess(accessMode))
+                continue;
+            switch (accessMode) {
+            case Function::Public:
+                addLabel(code, "public:");
+                break;
+            case Function::Protected:
+                addLabel(code, "protected:");
+                break;
+            case Function::Private:
+                addLabel(code, "private:");
+                break;
+            default:
+                break;
             }
-        }
 
-        if (publicMembers)
-            addLabel(code, "public:");
-        else if (!hasPrivateFunc || hasPrivateSlot)
-            addLabel(code, "private:");
+            if (mLabelsDefineIndent)
+                code.indent();
 
-        if (mLabelsDefineIndent)
-            code.indent();
+            if (classObject.useDPointer() && !classObject.memberVariables().isEmpty()) {
+                code += "class PrivateDPtr;";
+                if (classObject.useSharedData())
+                    code += "QSharedDataPointer<PrivateDPtr> " + classObject.dPointerName() + ";";
+                else
+                    code += "PrivateDPtr *" + classObject.dPointerName() + ";";
+            } else {
+                MemberVariable::List variables = classObject.memberVariables();
+                MemberVariable::List::ConstIterator it2;
+                for (it2 = variables.constBegin(); it2 != variables.constEnd(); ++it2) {
+                    MemberVariable v = *it2;
+                    if (v.access() != accessMode)
+                        continue;
 
-        if (classObject.useDPointer() && !classObject.memberVariables().isEmpty()) {
-            code += "class PrivateDPtr;";
-            if (classObject.useSharedData())
-                code += "QSharedDataPointer<PrivateDPtr> " + classObject.dPointerName() + ";";
-            else
-                code += "PrivateDPtr *" + classObject.dPointerName() + ";";
-        } else {
-            MemberVariable::List variables = classObject.memberVariables();
-            MemberVariable::List::ConstIterator it2;
-            for (it2 = variables.constBegin(); it2 != variables.constEnd(); ++it2) {
-                MemberVariable v = *it2;
+                    QString decl;
+                    if (v.isStatic())
+                        decl += "static ";
 
-                QString decl;
-                if (v.isStatic())
-                    decl += "static ";
+                    decl += formatType(v.type());
 
-                decl += formatType(v.type());
+                    decl += v.name() + ';';
 
-                decl += v.name() + ';';
-
-                code += decl;
+                    code += decl;
+                }
             }
+            if (mLabelsDefineIndent)
+                code.unindent();
         }
-        if (mLabelsDefineIndent)
-            code.unindent();
     }
 
     code.unindent();
@@ -310,7 +314,8 @@ QString Printer::Private::classImplementation(const Class &classObject, bool nes
         Function ctor("PrivateDPtr");
         bool hasInitializers = false;
         for (it = vars.constBegin(); it != vars.constEnd(); ++it) {
-            const MemberVariable v = *it;
+            MemberVariable v = *it;
+            v.setAccessMode(Function::Public);
             privateClass.addMemberVariable(v);
             if (!v.initializer().isEmpty()) {
                 ctor.addInitializer(v.name() + '(' + v.initializer() + ')');

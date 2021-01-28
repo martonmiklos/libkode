@@ -25,6 +25,7 @@
 #include <QtCore/QString>
 
 #include "variable.h"
+#include "function.h"
 
 #include <kode_export.h>
 
@@ -57,7 +58,8 @@ public:
      *
      * @param isStatic If true the variable is marked as static.
      */
-    MemberVariable(const QString &name, const QString &type, bool isStatic = false);
+    MemberVariable(const QString &name, const QString &type, bool isStatic = false,
+                   Function::AccessSpecifier access = Function::Private);
 
     /**
      * Destroys the member variable.
@@ -75,6 +77,19 @@ public:
      * name() afterwards.
      */
     static QString memberVariableName(const QString &inputName);
+
+    /**
+     * @brief setAccessMode this method can be used to set the member access mode
+     * (private/protected/public). The default accessMode is private
+     * @param specifier
+     */
+    void setAccessMode(Function::AccessSpecifier specifier);
+
+    /**
+     * @brief access This method returns the members access mode (private/protected/public)
+     * @return
+     */
+    Function::AccessSpecifier access() const;
 
 private:
     class Private;

@@ -501,6 +501,15 @@ QStringList KODE::Class::declarationMacros() const
     return d->mDeclMacros;
 }
 
+bool Class::hasMemberVariableWithAccess(Function::AccessSpecifier access) const
+{
+    for (const auto &mv : d->mMemberVariables) {
+        if (mv.access() == access)
+            return true;
+    }
+    return false;
+}
+
 void KODE::Class::setNamespaceAndName(const QString &name)
 {
     d->mName = name;

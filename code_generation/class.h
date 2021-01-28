@@ -334,6 +334,14 @@ public:
      */
     QStringList declarationMacros() const;
 
+    /**
+     * @brief hasMemberVariableWithAccess returns true if the class has a member variable
+     * with access mode specified in the access parameter
+     * @param access
+     * @return
+     */
+    bool hasMemberVariableWithAccess(Function::AccessSpecifier access) const;
+
 private:
     class Private;
     Private *d;

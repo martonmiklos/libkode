@@ -27,19 +27,22 @@ using namespace KODE;
 class MemberVariable::Private
 {
 public:
+    Function::AccessSpecifier mAccessSpecifier = Function::Private;
 };
 
-MemberVariable::MemberVariable() : Variable(), d(nullptr) {}
+MemberVariable::MemberVariable() : Variable(), d(new Private) {}
 
-MemberVariable::MemberVariable(const MemberVariable &other) : Variable(other), d(nullptr)
+MemberVariable::MemberVariable(const MemberVariable &other) : Variable(other), d(new Private)
 {
-    // *d = *other.d;
+    *d = *other.d;
 }
 
-MemberVariable::MemberVariable(const QString &name, const QString &type, bool isStatic)
-    : Variable(name, type, isStatic), d(nullptr)
+MemberVariable::MemberVariable(const QString &name, const QString &type, bool isStatic,
+                               Function::AccessSpecifier access)
+    : Variable(name, type, isStatic), d(new Private)
 {
     setName(memberVariableName(name));
+    setAccessMode(access);
 }
 
 MemberVariable::~MemberVariable()
@@ -53,7 +56,7 @@ MemberVariable &MemberVariable::operator=(const MemberVariable &other)
         return *this;
 
     Variable::operator=(other);
-    // *d = *other.d;
+    *d = *other.d;
 
     return *this;
 }
@@ -76,4 +79,14 @@ QString MemberVariable::memberVariableName(const QString &name)
     }
 
     return Style::makeIdentifier(n);
+}
+
+void MemberVariable::setAccessMode(Function::AccessSpecifier specifier)
+{
+    d->mAccessSpecifier = specifier;
+}
+
+Function::AccessSpecifier MemberVariable::access() const
+{
+    return d->mAccessSpecifier;
 }
