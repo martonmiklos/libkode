@@ -162,18 +162,6 @@ QString Printer::Private::classHeader(const Class &classObject, bool nestedClass
         code.newLine();
     }
 
-    Class::List nestedClasses = classObject.nestedClasses();
-    // Generate nestedclasses
-    if (!classObject.nestedClasses().isEmpty()) {
-        addLabel(code, "public:");
-
-        Class::List::ConstIterator it, itEnd = nestedClasses.constEnd();
-        for (it = nestedClasses.constBegin(); it != itEnd; ++it) {
-            code += classHeader((*it), true);
-        }
-
-        code.newLine();
-    }
 
     Typedef::List typedefs = classObject.typedefs();
     if (typedefs.count() > 0) {
@@ -202,6 +190,19 @@ QString Printer::Private::classHeader(const Class &classObject, bool nestedClass
 
         if (mLabelsDefineIndent)
             code.unindent();
+        code.newLine();
+    }
+
+    Class::List nestedClasses = classObject.nestedClasses();
+    // Generate nestedclasses
+    if (!classObject.nestedClasses().isEmpty()) {
+        addLabel(code, "public:");
+
+        Class::List::ConstIterator it, itEnd = nestedClasses.constEnd();
+        for (it = nestedClasses.constBegin(); it != itEnd; ++it) {
+            code += classHeader((*it), true);
+        }
+
         code.newLine();
     }
 
