@@ -270,7 +270,10 @@ QString Printer::Private::classHeader(const Class &classObject, bool nestedClass
 
                     decl += formatType(v.type());
 
-                    decl += v.name() + ';';
+                    if (!v.isStatic() && v.initializer().isEmpty())
+                        decl += v.name() + ';';
+                    else
+                        decl += v.name() + " = " + v.initializer() + ';';
 
                     code += decl;
                 }
@@ -366,13 +369,6 @@ QString Printer::Private::classImplementation(const Class &classObject, bool nes
         }
         if (!classObject.useDPointer() && f.name() == classObject.name()
             && f.arguments().isEmpty()) {
-            // Default constructor: add initializers for variables
-            for (itV = vars.constBegin(); itV != vars.constEnd(); ++itV) {
-                const MemberVariable v = *itV;
-                if (!v.initializer().isEmpty()) {
-                    inits.append(v.name() + '(' + v.initializer() + ')');
-                }
-            }
         }
 
         if (!inits.isEmpty()) {
