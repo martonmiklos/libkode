@@ -84,6 +84,12 @@ public:
      */
     void setIsQENUM(bool qenum = true);
 
+    /**
+     * @brief setIsQENUM
+     * This method can be used to generate typedef for the given enum
+     * @param typeDef
+     */
+    void setTypedef(bool typeDef = true);
 private:
     class Private;
     Private *d;
