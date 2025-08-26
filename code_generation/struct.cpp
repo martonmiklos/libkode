@@ -29,6 +29,7 @@ class Struct::Private
 public:
     QString mName;
     bool mTypedef = false;
+    bool mIsUnion = false;
     Variable::List mMembers;
 };
 
@@ -61,10 +62,14 @@ Variable::List Struct::memberVariables() const
 
 void Struct::printDeclaration(KODE::Code &code) const
 {
+    QString fieldName = "struct";
+    if (d->mIsUnion)
+        fieldName = "union";
+
     if (d->mTypedef)
-        code.addLine(QStringLiteral("typedef struct {"));
+        code.addLine(QStringLiteral("typedef %1 {").arg(fieldName));
     else
-        code.addLine(QStringLiteral("struct %1 {").arg(d->mName));
+        code.addLine(QStringLiteral("%1 %2 {").arg(fieldName, d->mName));
     code.indent();
 
     for (const auto &member : d->mMembers) {
@@ -77,4 +82,14 @@ void Struct::printDeclaration(KODE::Code &code) const
         code.addLine("};");
 
     code.newLine();
+}
+
+void Struct::setUnion(bool un)
+{
+    d->mIsUnion = un;
+}
+
+void Struct::clearMemberVariables()
+{
+	d->mMembers.clear();
 }

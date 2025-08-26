@@ -61,6 +61,10 @@ public:
      */
     void printDeclaration(KODE::Code &code) const;
 
+    void setUnion(bool un);
+
+		void clearMemberVariables();
+
 private:
     class Private;
     Private *d;
