@@ -704,7 +704,7 @@ void Printer::printHeader(const File &file)
         if (cl.useSharedData())
             includes.append(Include("QtCore/QSharedData"));
         // qDebug() << "includes=" << includes;
-        for (auto include : qAsConst(includes)) {
+        for (auto include : std::as_const(includes)) {
             if (!processedIncludes.contains(include)) {
                 if (include.type == Include::Relative)
                     out += "#include \"" + include.includeFileName + '"';
